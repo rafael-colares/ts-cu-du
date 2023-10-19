@@ -1,0 +1,18 @@
+#################################################
+#                Input File Paths               #
+#################################################
+nodeFile=../instances/testing/node.csv
+linkFile=../instances/testing/link.csv
+demandFile=../instances/testing/demand.csv
+
+#################################################
+#            Optimization Parameters            #
+#################################################
+linearRelaxation=0
+timeLimit=7200
+
+#################################################
+#              Output File Paths                #
+#################################################
+outputFile=./log_basic.txt
+
