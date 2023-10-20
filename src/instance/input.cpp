@@ -12,10 +12,9 @@ Input::Input(const std::string filename) : parameters_file(filename){
     link_file   = getParameterValue("linkFile=");
     demand_file = getParameterValue("demandFile=");
 
-    linear_relaxation       = std::stoi(getParameterValue("linearRelaxation="));
-    time_limit              = std::stoi(getParameterValue("timeLimit="));
-
-    output_file             = getParameterValue("outputFile=");
+    linear_relaxation = std::stoi(getParameterValue("linearRelaxation="));
+    time_limit        = std::stoi(getParameterValue("timeLimit="));
+    output_file       = getParameterValue("outputFile=");
 
     print();
 }
@@ -53,8 +52,7 @@ std::string Input::getParameterValue(std::string pattern){
 void Input::print(){
     std::cout << "\t Node File: " << node_file << std::endl;
     std::cout << "\t Link File: " << link_file << std::endl;
-    std::cout << "\t Service Chain Function File: " << demand_file << std::endl;
-    std::cout << "\t Virtual Network Function File: " << vnf_file << std::endl;
+    std::cout << "\t Demand File: " << demand_file << std::endl;
     std::cout << "\t Linear Relaxation: ";
     if (linear_relaxation){
         std::cout << "TRUE" << std::endl;
@@ -62,10 +60,6 @@ void Input::print(){
     else{
         std::cout << "FALSE" << std::endl;
     }
-    std::cout << "Strong capacity: " << strong_node_capacity << std::endl;
-    std::cout << "Number of paths upper bound: " << nb_paths_ub << std::endl;
-    std::cout << "Number of paths lower bound: " << nb_paths_lb << std::endl;
-    std::cout << "\t Number of breakpoints: " << nb_breakpoints << std::endl;
     std::cout << "\t Time Limit: " << time_limit << " seconds" << std::endl;
     std::cout << "\t Output File: " << output_file << std::endl;
 }

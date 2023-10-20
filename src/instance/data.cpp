@@ -176,12 +176,19 @@ void Data::print(){
 }
 
 void Data::printNodes(){
+	
+    std::cout << "-------------------------------------------------------------------" << std::endl;
+    std::cout << "-                              NODES                              -" << std::endl;
+    std::cout << "-------------------------------------------------------------------" << std::endl;
 	for (unsigned int i = 0; i < tabNodes.size(); i++){
         tabNodes[i].print();
     }
 	std::cout << std::endl;
 }
 void Data::printLinks(){
+    std::cout << "-------------------------------------------------------------------" << std::endl;
+    std::cout << "-                              LINKS                              -" << std::endl;
+    std::cout << "-------------------------------------------------------------------" << std::endl;
 	for (unsigned int i = 0; i < tabLinks.size(); i++){
         tabLinks[i].print();
     }
@@ -189,6 +196,9 @@ void Data::printLinks(){
 }
 
 void Data::printDemands(){
+    std::cout << "-------------------------------------------------------------------" << std::endl;
+    std::cout << "-                             DEMANDS                             -" << std::endl;
+    std::cout << "-------------------------------------------------------------------" << std::endl;
 	for (unsigned int i = 0; i < tabDemands.size(); i++){
         tabDemands[i].print();
     }

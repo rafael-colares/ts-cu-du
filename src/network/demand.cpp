@@ -19,5 +19,4 @@ void Demand::print(){
               << "Target: " << target << ","
               << "Max latency: " << max_latency << ", "
               << "Bandwidth: " << bandwidth << std::endl;
-    std::cout << std::endl;
 }
