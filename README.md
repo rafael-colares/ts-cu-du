@@ -10,13 +10,13 @@ Linux installation instructions:
     $ tar xvzf lemon-1.3.1.tar.gz
 
 3. Once downloaded and extracted, follow the instructions in http://lemon.cs.elte.hu/trac/lemon/wiki/InstallLinux . Here are the list of commands to follow:
-    $ cd lemon-1.3.1
-    $ mkdir build
-    $ cd build
-    $ cmake ..
-    $ make
-    $ make check
-    $ sudo make install
+    - $ cd lemon-1.3.1
+    - $ mkdir build
+    - $ cd build
+    - $ cmake ..
+    - $ make
+    - $ make check
+    - $ sudo make install
 
 3. If everything worked well you should be able to compile and run the hello_lemon code. Compile the code with:
     $ g++ -o hello_lemon hello_lemon.cpp -lemon
