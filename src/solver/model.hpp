@@ -59,6 +59,7 @@ class Model
 		/*** Formulation variables ***/
 		IloNumVarMatrix 	x_cu;           /**< Central Unit placement variables **/
 		IloNumVarMatrix 	x_du;           /**< Distributed Unit placement variables **/
+		IloNumVar3DMatrix 	z;           /**< Distributed Unit placement variables **/
 
 		/*** Manage execution and control ***/
 		IloNum time;
@@ -84,6 +85,9 @@ class Model
         /** Set up the distributed unit placement variables. **/
         void setDistributedUnitPlacementVariables(const int NB_DEMANDS, const int NB_NODES);
 
+        /** Set up the linearization variables z. **/
+        void setLinearizationVariables(const int NB_DEMANDS, const int NB_NODES);
+
 	/****************************************************************************************/
 	/*									Objective Function									*/
 	/****************************************************************************************/
@@ -101,6 +105,16 @@ class Model
 
         /** Set up the distributed unit assignment constraints: for each demand, at least one DU must be assigned. **/
         void setDistributedUnitAssignmentConstraints();
+
+		/* Set up the link capacity constraints: for each network link, the aggregated throughput must be smaller than its capacity */
+		void setLinkCapacityConstraints();
+
+		void setPlacementDUConstraints();
+		void setPlacementCUConstraints();
+
+		void setLinearityConstraints1();
+		void setLinearityConstraints2();
+		void setLinearityConstraints3();
 
         /** Set up the Cplex parameters. **/
         void setCplexParameters();

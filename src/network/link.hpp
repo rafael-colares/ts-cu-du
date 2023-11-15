@@ -20,16 +20,18 @@ class Link{
         const std::string name;			/**< Link name. **/
         const int 		  source_id;	/**< Link source. **/
         const int 		  target_id;	/**< Link target. **/
-		const double 	  delay;		/**< Link delay. **/
-		const double 	  bandwidth;	/**< Link total bandwidth. **/
+		const double 	  capacity;		/**< Link capacity. **/
+		// const double 	  delay;		/**< Link delay. **/
+		// const double 	  bandwidth;	/**< Link total bandwidth. **/
 
     public:
 	/****************************************************************************************/
 	/*										Constructor										*/
 	/****************************************************************************************/
-	/** Constructor. @param id_ Link id. @param name_ Link name. @param s Link's source id. @param t Link's target id. @param d Link's delay. @param b Link's total bandwidth. **/
-	Link(const int id_ = -1, const std::string name_ = "", const int s = -1, const int t = -1, const double d = 0.0, const double b = 0.0);
-    
+	// /** Constructor. @param id_ Link id. @param name_ Link name. @param s Link's source id. @param t Link's target id. @param d Link's delay. @param b Link's total bandwidth. **/
+	// Link(const int id_ = -1, const std::string name_ = "", const int s = -1, const int t = -1, const double d = 0.0, const double b = 0.0);
+	/** Constructor. @param id_ Link id. @param name_ Link name. @param s Link's source id. @param t Link's target id. @param c Link's capacity. **/
+	Link(const int id_ = -1, const std::string name_ = "", const int s = -1, const int t = -1, const double c = 0.0);
 
 	/****************************************************************************************/
 	/*										Getters											*/
@@ -42,10 +44,12 @@ class Link{
 	const int& 			getSource() 	const { return this->source_id; }
 	/** Returns the link's target id. **/
 	const int& 			getTarget() 	const { return this->target_id; }
-	/** Returns the link's delay. **/
-	const double& 		getDelay() 		const { return this->delay; }
-	/** Returns the link's total bandwidth. **/
-	const double& 		getBandwidth() 	const { return this->bandwidth; }
+	/** Returns the link's capacity. **/
+	const double& 		getCapacity() 		const { return this->capacity; }
+	// /** Returns the link's delay. **/
+	// const double& 		getDelay() 		const { return this->delay; }
+	// /** Returns the link's total bandwidth. **/
+	// const double& 		getBandwidth() 	const { return this->bandwidth; }
 
 	/****************************************************************************************/
 	/*										Display											*/

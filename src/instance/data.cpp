@@ -37,12 +37,12 @@ const int Data::getIdFromNodeName(const std::string name) const
 
 /* Returns the cost of placing a central unit on the given node. @param node The target node. */
 const double Data::getCentralUnitPlacementCost(const Node& node) const{
-	return node.getCentralUnitPlacementCost();
+	return node.getCostCU();
 }
 
 /* Returns the cost of placing a distributed unit on the given node. @param node The target node. */
 const double Data::getDistributedUnitPlacementCost(const Node& node) const{
-	return node.getDistributedUnitPlacementCost();
+	return node.getCostDU();
 
 }
 
@@ -66,11 +66,10 @@ void Data::readNodeFile(const std::string filename)
 	for (unsigned int i = 1; i < dataList.size(); i++)	{
 		int nodeId = (int)i - 1;
 		std::string nodeName = dataList[i][0];
-		double nodeX = atof(dataList[i][1].c_str());
-		double nodeY = atof(dataList[i][2].c_str());
-		double capacity = atof(dataList[i][3].c_str());
-		double cost = atof(dataList[i][5].c_str());
-		this->tabNodes.push_back(Node(nodeId, nodeName, nodeX, nodeY, capacity, cost));
+		std::string nodeType = dataList[i][1];
+		double costCU = atof(dataList[i][2].c_str()); 
+		double costDU = atof(dataList[i][3].c_str());
+		this->tabNodes.push_back(Node(nodeId, nodeName, nodeType, costCU, costDU));
 		hashNode.insert({nodeName, nodeId});
 	}
 
@@ -94,9 +93,8 @@ void Data::readLinkFile(const std::string filename)
 		std::string linkName = dataList[i][0];
 		int source = getIdFromNodeName(dataList[i][1]);
 		int target = getIdFromNodeName(dataList[i][2]);
-		double delay = atof(dataList[i][3].c_str());;
-		double bandwidth = atof(dataList[i][4].c_str());
-		this->tabLinks.push_back(Link(linkId, linkName, source, target, delay, bandwidth));
+		double linkCapacity = atof(dataList[i][3].c_str());;
+		this->tabLinks.push_back(Link(linkId, linkName, source, target, linkCapacity));
 	}
 }
 
@@ -117,10 +115,9 @@ void Data::readDemandFile(const std::string filename)
 		int demandId = (int)i - 1;
 		std::string demandName = dataList[i][0];
 		int source = getIdFromNodeName(dataList[i][1]);
-		int target = getIdFromNodeName(dataList[i][2]);
-		double latency = atof(dataList[i][3].c_str());
-		double band = atof(dataList[i][4].c_str());
-		this->tabDemands.push_back(Demand(demandId, demandName, source, target, latency, band));
+		double maxLatency = atof(dataList[i][2].c_str());
+		double throughput = atof(dataList[i][3].c_str());
+		this->tabDemands.push_back(Demand(demandId, demandName, source, maxLatency, throughput));
 	}
 }
 
