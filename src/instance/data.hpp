@@ -59,9 +59,6 @@ private:
 	ArcMap* 			lemonArcId;					/**< A map storing the arcs' lemon ids. **/
 
 	std::unordered_map<std::string, int> hashNode; 	/**< A map for locating node id's from its name. **/
-
-	std::vector<int>	availNodeRank;				/**< A vector containing the ids of nodes in decreasing order of availability. **/
-	std::vector<int>	maxPathsPerDemand;			/**< A vector storing an upper bound on the number of paths dedicated to each demand. **/
 public:
 
 	/****************************************************************************************/
@@ -125,9 +122,6 @@ public:
 
 	/** Reads the link file and fills the set of link. @param filename The link file to be read. **/
 	void readLinkFile(const std::string filename);
-
-	/** Reads the vnf file and fills the set of vnfs. @param filename The vnf file to be read. **/
-	void readVnfFile(const std::string filename);
 
 	/** Reads the demand file and fills the set of demands. @param filename The demand file to be read. **/
 	void readDemandFile(const std::string filename);

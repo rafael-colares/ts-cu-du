@@ -3,3 +3,4 @@ src/instance/*.o
 src/.vscode/*
 src/exec
 src/log_basic.txt
+src/exec
