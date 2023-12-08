@@ -101,20 +101,22 @@ class Model
         void setConstraints();
 		
         /** Set up the central unit assignment constraints: for each demand, exactly one CU must be assigned. **/
-        void setCentralUnitAssignmentConstraints();
+        // void setCentralUnitAssignmentConstraints();
 
         /** Set up the distributed unit assignment constraints: for each demand, at least one DU must be assigned. **/
-        void setDistributedUnitAssignmentConstraints();
+        // void setDistributedUnitAssignmentConstraints();
+
+        void setPlacementConstraints();
 
 		/* Set up the link capacity constraints: for each network link, the aggregated throughput must be smaller than its capacity */
 		void setLinkCapacityConstraints();
 
-		void setPlacementDUConstraints();
-		void setPlacementCUConstraints();
+		// void setPlacementDUConstraints();
+		// void setPlacementCUConstraints();
 
-		void setLinearityConstraints1();
-		void setLinearityConstraints2();
-		void setLinearityConstraints3();
+		// void setLinearityConstraints1();
+		// void setLinearityConstraints2();
+		// void setLinearityConstraints3();
 
         /** Set up the Cplex parameters. **/
         void setCplexParameters();
