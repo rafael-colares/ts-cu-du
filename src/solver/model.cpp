@@ -84,18 +84,18 @@ void Model::setLinearizationVariables(const int NB_DEMANDS, const int NB_NODES){
     z.resize(NB_DEMANDS);
     for (int i = 0; i < NB_DEMANDS; i++){
         z[i].resize(NB_NODES);
+        int sourceId = data.getDemand(i).getSource();
+        Graph::Node sourceNode = data.getGraph().nodeFromId(sourceId);
         for (NodeIt duNode(data.getGraph()); duNode != lemon::INVALID; ++duNode){
             int j = data.getNodeId(duNode);
             z[i][j].resize(NB_NODES);
             for (NodeIt cuNode(data.getGraph()); cuNode != lemon::INVALID; ++cuNode){
                 int k = data.getNodeId(cuNode);
                 std::string name = "z(" + std::to_string(i) + "," + std::to_string(j) + "," + std::to_string(k) + ")";
-                if (data.getInput().isRelaxation()){
-                    z[i][j][k] = IloNumVar(env, 0.0, 1.0, ILOFLOAT, name.c_str());
-                }
-                else{
-                    z[i][j][k] = IloNumVar(env, 0.0, 1.0, ILOINT, name.c_str());
-                }
+                IloNumVar::Type varType = data.getInput().isRelaxation() ? ILOFLOAT : ILOBOOL;
+                double upperBound = (data.areNeighbors(sourceNode, duNode) && data.areNeighbors(duNode, cuNode)) ? 1.0 : 0.0;
+
+                z[i][j][k] = IloNumVar(env, 0.0, upperBound, varType, name.c_str());
                 model.add(z[i][j][k]);
             }
         }
