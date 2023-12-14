@@ -59,7 +59,7 @@ class Model
 		/*** Formulation variables ***/
 		IloNumVarMatrix 	x_cu;           /**< Central Unit placement variables **/
 		IloNumVarMatrix 	x_du;           /**< Distributed Unit placement variables **/
-		IloNumVar3DMatrix 	z;           /**< Distributed Unit placement variables **/
+		IloNumVar3DMatrix 	z;           	/**< Total placement variables. z[i][j][k] = 1 if demand i has a DU in node j and CU in node k. **/
 
 		/*** Manage execution and control ***/
 		IloNum time;

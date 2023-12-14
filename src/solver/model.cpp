@@ -36,46 +36,46 @@ void Model::setVariables(){
 }
 
 /** Set up the central unit placement variables. **/
-// void Model::setCentralUnitPlacementVariables(const int NB_DEMANDS, const int NB_NODES){
-//     /* Central Unit placement variables: x_cu[i][j] = 1 if Central Unit of demand i is placed on node j. */
-//     std::cout << "\t >> Setting up Central Unit placement variables. " << std::endl;
-//     x_cu.resize(NB_DEMANDS);
-//     for (int i = 0; i < NB_DEMANDS; i++){
-//         x_cu[i].resize(NB_NODES);
-//         for (NodeIt n(data.getGraph()); n != lemon::INVALID; ++n){
-//             int j = data.getNodeId(n);
-//             std::string name = "x_cu(" + std::to_string(i) + "," + std::to_string(j) + ")";
-//             if (data.getInput().isRelaxation()){
-//                 x_cu[i][j] = IloNumVar(env, 0.0, 1.0, ILOFLOAT, name.c_str());
-//             }
-//             else{
-//                 x_cu[i][j] = IloNumVar(env, 0.0, 1.0, ILOINT, name.c_str());
-//             }
-//             model.add(x_cu[i][j]);
-//         }
-//     }
-// }
+void Model::setCentralUnitPlacementVariables(const int NB_DEMANDS, const int NB_NODES){
+    /* Central Unit placement variables: x_cu[i][j] = 1 if Central Unit of demand i is placed on node j. */
+    std::cout << "\t >> Setting up Central Unit placement variables. " << std::endl;
+    x_cu.resize(NB_DEMANDS);
+    for (int i = 0; i < NB_DEMANDS; i++){
+        x_cu[i].resize(NB_NODES);
+        for (NodeIt n(data.getGraph()); n != lemon::INVALID; ++n){
+            int j = data.getNodeId(n);
+            std::string name = "x_cu(" + std::to_string(i) + "," + std::to_string(j) + ")";
+            if (data.getInput().isRelaxation()){
+                x_cu[i][j] = IloNumVar(env, 0.0, 1.0, ILOFLOAT, name.c_str());
+            }
+            else{
+                x_cu[i][j] = IloNumVar(env, 0.0, 1.0, ILOINT, name.c_str());
+            }
+            model.add(x_cu[i][j]);
+        }
+    }
+}
 
 /** Set up the distributed unit placement variables. **/
-// void Model::setDistributedUnitPlacementVariables(const int NB_DEMANDS, const int NB_NODES){
-//     /* Distributed Unit placement variables: x_du[i][j] = 1 if a Distributed Unit of demand i is placed on node j. */
-//     std::cout << "\t >> Setting up Distributed Unit placement variables. " << std::endl;
-//     x_du.resize(NB_DEMANDS);
-//     for (int i = 0; i < NB_DEMANDS; i++){
-//         x_du[i].resize(NB_NODES);
-//         for (NodeIt n(data.getGraph()); n != lemon::INVALID; ++n){
-//             int j = data.getNodeId(n);
-//             std::string name = "x_du(" + std::to_string(i) + "," + std::to_string(j) + ")";
-//             if (data.getInput().isRelaxation()){
-//                 x_du[i][j] = IloNumVar(env, 0.0, 1.0, ILOFLOAT, name.c_str());
-//             }
-//             else{
-//                 x_du[i][j] = IloNumVar(env, 0.0, 1.0, ILOINT, name.c_str());
-//             }
-//             model.add(x_du[i][j]);
-//         }
-//     }
-// }
+void Model::setDistributedUnitPlacementVariables(const int NB_DEMANDS, const int NB_NODES){
+    /* Distributed Unit placement variables: x_du[i][j] = 1 if a Distributed Unit of demand i is placed on node j. */
+    std::cout << "\t >> Setting up Distributed Unit placement variables. " << std::endl;
+    x_du.resize(NB_DEMANDS);
+    for (int i = 0; i < NB_DEMANDS; i++){
+        x_du[i].resize(NB_NODES);
+        for (NodeIt n(data.getGraph()); n != lemon::INVALID; ++n){
+            int j = data.getNodeId(n);
+            std::string name = "x_du(" + std::to_string(i) + "," + std::to_string(j) + ")";
+            if (data.getInput().isRelaxation()){
+                x_du[i][j] = IloNumVar(env, 0.0, 1.0, ILOFLOAT, name.c_str());
+            }
+            else{
+                x_du[i][j] = IloNumVar(env, 0.0, 1.0, ILOINT, name.c_str());
+            }
+            model.add(x_du[i][j]);
+        }
+    }
+}
 
 /** Set up the distributed unit placement variables. **/
 void Model::setLinearizationVariables(const int NB_DEMANDS, const int NB_NODES){
