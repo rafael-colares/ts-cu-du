@@ -60,6 +60,7 @@ class Model
 		IloNumVarMatrix 	x_cu;           /**< Central Unit placement variables **/
 		IloNumVarMatrix 	x_du;           /**< Distributed Unit placement variables **/
 		IloNumVar3DMatrix 	z;           	/**< Total placement variables. z[i][j][k] = 1 if demand i has a DU in node j and CU in node k. **/
+		IloNumVar4DMatrix 	concurrent;     /**< Concurrent placement variables. [i1][i2][j][k] = 1 if demand i1 and demand i2 have both a DU in node j and CU in node k. **/
 
 		/*** Manage execution and control ***/
 		IloNum time;
@@ -87,6 +88,9 @@ class Model
 
         /** Set up the linearization variables z. **/
         void setLinearizationVariables(const int NB_DEMANDS, const int NB_NODES);
+
+        /** Set up the concurrent variables. **/
+        void setConcurrentVariables(const int NB_DEMANDS, const int NB_NODES);
 
 	/****************************************************************************************/
 	/*									Objective Function									*/

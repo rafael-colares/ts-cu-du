@@ -32,6 +32,7 @@ void Model::setVariables(){
     // setCentralUnitPlacementVariables(NB_DEMANDS, NB_NODES);
     // setDistributedUnitPlacementVariables(NB_DEMANDS, NB_NODES);
     setLinearizationVariables(NB_DEMANDS, NB_NODES);
+    setConcurrentVariables(NB_DEMANDS, NB_NODES);
     std::cout << "\t All variables are set up! " << std::endl;
 }
 
@@ -77,9 +78,9 @@ void Model::setDistributedUnitPlacementVariables(const int NB_DEMANDS, const int
     }
 }
 
-/** Set up the distributed unit placement variables. **/
+/* Set up the linearization variables z. */
 void Model::setLinearizationVariables(const int NB_DEMANDS, const int NB_NODES){
-    /* Distributed Unit placement variables: x_du[i][j] = 1 if a Distributed Unit of demand i is placed on node j. */
+    /* Total placement variables. z[i][j][k] = 1 if demand i has a DU in node j and CU in node k. */
     std::cout << "\t >> Setting up Linearization variables. " << std::endl;
     z.resize(NB_DEMANDS);
     for (int i = 0; i < NB_DEMANDS; i++){
@@ -97,6 +98,35 @@ void Model::setLinearizationVariables(const int NB_DEMANDS, const int NB_NODES){
 
                 z[i][j][k] = IloNumVar(env, 0.0, upperBound, varType, name.c_str());
                 model.add(z[i][j][k]);
+            }
+        }
+    }
+}
+
+void Model::setConcurrentVariables(const int NB_DEMANDS, const int NB_NODES)
+{
+    /* Concurrent placement variables. [i1][i2][j][k] = 1 if demand i1 and demand i2 have both a DU in node j and CU in node k. */
+    
+    std::cout << "\t >> Setting up concurrent placement variables. " << std::endl;
+    concurrent.resize(NB_DEMANDS);
+    for (int i1 = 0; i1 < NB_DEMANDS; i1++){
+        concurrent[i1].resize(NB_NODES);
+        Graph::Node ruNode1 = data.getGraph().nodeFromId(data.getDemand(i1).getSource());
+        for (int i2 = 0; i2 < NB_DEMANDS; i2++){
+            concurrent[i1][i2].resize(NB_NODES);
+            Graph::Node ruNode2 = data.getGraph().nodeFromId(data.getDemand(i2).getSource());
+            for (NodeIt duNode(data.getGraph()); duNode != lemon::INVALID; ++duNode){
+                int j = data.getNodeId(duNode);
+                concurrent[i1][i2][j].resize(NB_NODES);
+                for (NodeIt cuNode(data.getGraph()); cuNode != lemon::INVALID; ++cuNode){
+                    int k = data.getNodeId(cuNode);
+                    std::string name = "conc(" + std::to_string(i1) + "," + std::to_string(i2) + "," + std::to_string(j) + "," + std::to_string(k) + ")";
+                    IloNumVar::Type varType = data.getInput().isRelaxation() ? ILOFLOAT : ILOBOOL;
+                    double upperBound = (data.areNeighbors(ruNode1, duNode) && data.areNeighbors(ruNode2, duNode) && data.areNeighbors(duNode, cuNode)) ? 1.0 : 0.0;
+
+                    concurrent[i1][i2][j][k] = IloNumVar(env, 0.0, upperBound, varType, name.c_str());
+                    model.add(concurrent[i1][i2][j][k]);
+                }
             }
         }
     }
