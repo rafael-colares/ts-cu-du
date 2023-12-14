@@ -242,29 +242,19 @@ void Model::setConstraints(){
 void Model::setPlacementConstraints(){
     std::cout << "\t > Setting up central unit assignment constraints " << std::endl;
 
-    int numOfNodes = lemon::countNodes(data.getGraph());
-
-    int neighborhood[numOfNodes][numOfNodes]={0};
-
-    for (ArcIt l(data.getGraph()); l != lemon::INVALID; ++l){
-        int idx_i = data.getGraph().id(data.getGraph().source(l));
-        int idx_j = data.getGraph().id(data.getGraph().target(l));
-
-        neighborhood[idx_i][idx_j] = 1;
-    }
-
-    for (int i = 0; i < numOfNodes; i++){
-        neighborhood[i][i] = 1;
-    }
-
-    for (int idx = 0; idx < data.getNbDemands(); idx++){
-        int i = data.getDemand(idx).getSource();
+    for (int i = 0; i < data.getNbDemands(); i++){
+        int ruNodeId = data.getDemand(i).getSource();
+        Graph::Node ruNode = data.getGraph().nodeFromId(ruNodeId);
         IloExpr exp(env);
-        for (NodeIt n(data.getGraph()); n != lemon::INVALID; ++n){
-            for (NodeIt nn(data.getGraph()); nn != lemon::INVALID; ++nn){
-                int j = data.getNodeId(n);
-                int k = data.getNodeId(nn);
-                exp += (neighborhood[i][j] * neighborhood[j][k] * z[i][j][k]);
+        for(NodeIt duNode(data.getGraph()); duNode != lemon::INVALID; ++duNode) {
+            if (data.areNeighbors(ruNode, duNode)){
+                int j = data.getNodeId(duNode);
+                for(NodeIt cuNode(data.getGraph()); cuNode != lemon::INVALID; ++cuNode) {
+                    if (data.areNeighbors(duNode, cuNode)){
+                        int k = data.getNodeId(cuNode);
+                        exp += z[i][j][k]; 
+                    }
+                }
             }
         }
         std::string name = "Placement(" + std::to_string(i) + ")";
