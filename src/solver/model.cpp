@@ -112,14 +112,13 @@ void Model::setObjective(){
     std::cout << "\t Setting up objective function... " << std::endl;
 	IloExpr exp(env);
     /* Central unit placement costs */
-    for (int ii = 0; ii < data.getNbDemands(); ii++){
-        int i = data.getDemand(ii).getSource();
-        for(NodeIt n(data.getGraph()); n != lemon::INVALID; ++n) {
-            int j = data.getNodeId(n);
-            for(NodeIt nn(data.getGraph()); nn != lemon::INVALID; ++nn) {
-                int k = data.getNodeId(nn);
-                double costCU = data.getCentralUnitPlacementCost(data.getNode(j));
-                double costDU = data.getDistributedUnitPlacementCost(data.getNode(k));
+    for (int i = 0; i < data.getNbDemands(); i++){
+        for(NodeIt duNode(data.getGraph()); duNode != lemon::INVALID; ++duNode) {
+            int j = data.getNodeId(duNode);
+            for(NodeIt cuNode(data.getGraph()); cuNode != lemon::INVALID; ++cuNode) {
+                int k = data.getNodeId(cuNode);
+                double costDU = data.getDistributedUnitPlacementCost(data.getNode(j));
+                double costCU = data.getCentralUnitPlacementCost(data.getNode(k));
                 exp += ( (costCU + costDU)*z[i][j][k] ); 
             }
         }
