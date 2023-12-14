@@ -275,9 +275,8 @@ void Model::setLinkCapacityConstraints(){
         int k = data.getGraph().id(data.getGraph().target(l));
         double mu = data.getLink(data.getGraph().id(l)).getCapacity();
         cout << j << " " << k << " " << mu;
-        for (int ii = 0; ii < data.getNbDemands(); ii++){
-            int i = data.getDemand(ii).getSource();
-            double lambda = data.getDemand(ii).getThroughput();
+        for (int i = 0; i < data.getNbDemands(); i++){
+            double lambda = data.getDemand(i).getThroughput();
             cout << " " << lambda << " ";
             exp += lambda * z[i][j][k];
         }
