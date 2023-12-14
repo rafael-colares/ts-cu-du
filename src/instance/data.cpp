@@ -46,6 +46,26 @@ const double Data::getDistributedUnitPlacementCost(const Node& node) const{
 
 }
 
+/* Checks if node v is in the neighborhood of node u in the graph. */
+const bool Data::areNeighbors(const Graph::Node &u, const Graph::Node &v) const
+{
+	int nodeId = getNodeId(v);
+	// check if same node
+	if (nodeId == getNodeId(u)){
+		return true;
+	}
+
+	// check if in the neighborhood
+	for(Graph::OutArcIt a(getGraph(), u); a != lemon::INVALID; ++a) {
+		Graph::Node neighborNode = getGraph().oppositeNode(u, a);
+		if (nodeId == getNodeId(neighborNode)){
+			return true;
+		}
+	}
+	
+	return false;
+}
+
 /****************************************************************************************/
 /*										Builders 										*/
 /****************************************************************************************/

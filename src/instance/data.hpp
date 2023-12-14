@@ -105,6 +105,9 @@ public:
 	/** Returns the cost of placing a distributed unit on the given node. @param node The target node. **/
 	const double getDistributedUnitPlacementCost(const Node& node) const;
 
+	/** Checks if node v is in the neighborhood of node u in the graph. **/
+	const bool areNeighbors(const Graph::Node& u, const Graph::Node& v) const;
+
 	/****************************************************************************************/
 	/*										Setters											*/
 	/****************************************************************************************/
