@@ -138,6 +138,7 @@ void Data::buildGraph()
         Graph::Node n = graph->addNode();
         setNodeId(n, tabNodes[i].getId());
         setLemonNodeId(n, graph->id(n));
+		assert(tabNodes[i].getId() == graph->id(n));
     }
 
 	/* Define arcs */
@@ -158,6 +159,7 @@ void Data::buildGraph()
             Arc a = graph->addArc(sourceNode, targetNode);
             setLemonArcId(a, graph->id(a));
             setArcId(a, tabLinks[i].getId());
+			assert(graph->id(a) == tabLinks[i].getId());
         }
     }
 }
