@@ -115,6 +115,7 @@ class Model
 		/* Set up the link capacity constraints: for each network link, the aggregated throughput must be smaller than its capacity */
 		void setLinkCapacityConstraints();
 
+        void setConcurrentConstraints();
 		// void setPlacementDUConstraints();
 		// void setPlacementCUConstraints();
 

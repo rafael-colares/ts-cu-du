@@ -105,7 +105,7 @@ void Model::setLinearizationVariables(const int NB_DEMANDS, const int NB_NODES){
 
 void Model::setConcurrentVariables(const int NB_DEMANDS, const int NB_NODES)
 {
-    /* Concurrent placement variables. [i1][i2][j][k] = 1 if demand i1 and demand i2 have both a DU in node j and CU in node k. */
+    /* Concurrent placement variables. c[i1][i2][j][k] = 1 if demand i1 and demand i2 have both a DU in node j and CU in node k. */
     
     std::cout << "\t >> Setting up concurrent placement variables. " << std::endl;
     concurrent.resize(NB_DEMANDS);
@@ -197,6 +197,7 @@ void Model::setConstraints(){
     // setLinearityConstraints3();
     setPlacementConstraints();
     setLinkCapacityConstraints();
+    setConcurrentConstraints();
 
     model.add(constraints);
     std::cout << "\t The constraint matrix has been set up! " << std::endl;
@@ -316,6 +317,47 @@ void Model::setLinkCapacityConstraints(){
         constraints.add(IloRange(env, 0, exp, mu, name.c_str()));
         exp.clear();
         exp.end();
+    }
+}
+
+void Model::setConcurrentConstraints()
+{
+    for (int i1 = 0; i1 < data.getNbDemands(); i1++){
+        Graph::Node ruNode1 = data.getGraph().nodeFromId(data.getDemand(i1).getSource());
+        for (int i2 = 0; i2 < data.getNbDemands(); i2++){
+            Graph::Node ruNode2 = data.getGraph().nodeFromId(data.getDemand(i2).getSource());
+            for (NodeIt duNode(data.getGraph()); duNode != lemon::INVALID; ++duNode){
+                if (data.areNeighbors(ruNode1, duNode) && data.areNeighbors(ruNode2, duNode)){
+                    int j = data.getNodeId(duNode);
+                    for (NodeIt cuNode(data.getGraph()); cuNode != lemon::INVALID; ++cuNode){
+                        if (data.areNeighbors(duNode, cuNode)){
+                            int k = data.getNodeId(cuNode);
+
+                            IloExpr exp1(env);
+                            exp1 += concurrent[i1][i2][j][k] - z[i1][j][k];
+                            std::string name1 = "ConcurrentLinearization1(" + std::to_string(i1) + "," + std::to_string(i2) + "," + std::to_string(j) + "," + std::to_string(k) + ")";
+                            constraints.add(IloRange(env, -IloInfinity, exp1, 0, name1.c_str()));
+                            exp1.clear();
+                            exp1.end();
+
+                            IloExpr exp2(env);
+                            exp2 += concurrent[i1][i2][j][k] - z[i2][j][k];
+                            std::string name2 = "ConcurrentLinearization2(" + std::to_string(i1) + "," + std::to_string(i2) + "," + std::to_string(j) + "," + std::to_string(k) + ")";
+                            constraints.add(IloRange(env, -IloInfinity, exp2, 0, name2.c_str()));
+                            exp2.clear();
+                            exp2.end();
+
+                            IloExpr exp3(env);
+                            exp3 += z[i1][j][k] + z[i2][j][k] - concurrent[i1][i2][j][k];
+                            std::string name3 = "ConcurrentLinearization3(" + std::to_string(i1) + "," + std::to_string(i2) + "," + std::to_string(j) + "," + std::to_string(k) + ")";
+                            constraints.add(IloRange(env, -IloInfinity, exp3, 1, name3.c_str()));
+                            exp3.clear();
+                            exp3.end();
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
