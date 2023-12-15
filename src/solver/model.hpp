@@ -116,6 +116,7 @@ class Model
 		void setLinkCapacityConstraints();
 
         void setConcurrentConstraints();
+        void setDelayConstraints();
 		// void setPlacementDUConstraints();
 		// void setPlacementCUConstraints();
 
