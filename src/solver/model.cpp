@@ -32,7 +32,7 @@ void Model::setVariables(){
     // setCentralUnitPlacementVariables(NB_DEMANDS, NB_NODES);
     // setDistributedUnitPlacementVariables(NB_DEMANDS, NB_NODES);
     setLinearizationVariables(NB_DEMANDS, NB_NODES);
-    setConcurrentVariables(NB_DEMANDS, NB_NODES);
+    // setConcurrentVariables(NB_DEMANDS, NB_NODES);
     std::cout << "\t All variables are set up! " << std::endl;
 }
 
@@ -306,13 +306,13 @@ void Model::setLinkCapacityConstraints(){
         int j = data.getGraph().id(data.getGraph().source(l));
         int k = data.getGraph().id(data.getGraph().target(l));
         double mu = data.getLink(data.getGraph().id(l)).getCapacity();
-        cout << j << " " << k << " " << mu;
+        // cout << j << " " << k << " " << mu;
         for (int i = 0; i < data.getNbDemands(); i++){
             double lambda = data.getDemand(i).getThroughput();
             cout << " " << lambda << " ";
             exp += lambda * z[i][j][k];
         }
-        cout << endl;
+        // cout << endl;
 
         std::string name = "Capacity of link(" + std::to_string(data.getGraph().id(l)) + ")";
         constraints.add(IloRange(env, 0, exp, mu, name.c_str()));
@@ -364,29 +364,57 @@ void Model::setConcurrentConstraints()
 
 void Model::setDelayConstraints()
 {
+    // for (int i = 0; i < data.getNbDemands(); i++){
+    //     IloExpr exp(env);
+    //     Graph::Node ruNode = data.getGraph().nodeFromId(data.getDemand(i).getSource());
+    //     // fronthaul delay computation
+    //     for (Graph::OutArcIt a(data.getGraph(), ruNode); a != lemon::INVALID; ++a){
+    //         Graph::Node duNode = data.getGraph().oppositeNode(ruNode, a);
+    //         double mu = data.getLink(data.getGraph().id(a)).getCapacity();
+    //         int j = data.getNodeId(duNode);
+    //         double coeff = (1.0 / (mu - data.getDemand(i).getThroughput()));
+    //         for (NodeIt cuNode(data.getGraph()); cuNode != lemon::INVALID; ++cuNode){
+    //             if (data.areNeighbors(duNode, cuNode)){
+    //                 int k = data.getNodeId(cuNode);
+    //                 exp += (coeff * z[i][j][k]);
+    //             }
+    //         }
+    //     }
+    //     // midhaul delay computation
+    //     // TODO
+    //     std::string name = "Delay(" + std::to_string(i) + ")";
+    //     constraints.add(IloRange(env, -IloInfinity, exp, data.getDemand(i).getMaxLatency(), name.c_str()));
+    //     exp.clear();
+    //     exp.end();
+    // }
+
+    
     for (int i = 0; i < data.getNbDemands(); i++){
-        IloExpr exp(env);
-        Graph::Node ruNode = data.getGraph().nodeFromId(data.getDemand(i).getSource());
-        // fronthaul delay computation
-        for (Graph::OutArcIt a(data.getGraph(), ruNode); a != lemon::INVALID; ++a){
-            Graph::Node duNode = data.getGraph().oppositeNode(ruNode, a);
-            double mu = data.getLink(data.getGraph().id(a)).getCapacity();
-            int j = data.getNodeId(duNode);
-            double coeff = (1.0 / (mu - data.getDemand(i).getThroughput()));
-            for (NodeIt cuNode(data.getGraph()); cuNode != lemon::INVALID; ++cuNode){
-                if (data.areNeighbors(duNode, cuNode)){
-                    int k = data.getNodeId(cuNode);
-                    exp += (coeff * z[i][j][k]);
+        int ruNodeId = data.getDemand(i).getSource();
+        Graph::Node ruNode = data.getGraph().nodeFromId(ruNodeId);
+        for(NodeIt duNode(data.getGraph()); duNode != lemon::INVALID; ++duNode) {
+            if (data.areNeighbors(ruNode, duNode)){
+                int j = data.getNodeId(duNode);
+                for(NodeIt cuNode(data.getGraph()); cuNode != lemon::INVALID; ++cuNode) {
+                    if (data.areNeighbors(duNode, cuNode)){
+                        int k = data.getNodeId(cuNode);
+                        double mu = ;       //TODO: find mu based on pair (j,k)
+                        double sigma = ;    //TODO: find sigma (check definition on overleaf)
+                        IloExpr exp(env);
+                        for (int ii = 0; ii < data.getNbDemands(); ii++){
+                            double lambda = data.getDemand(ii).getThroughput();
+                            exp += lambda * z[ii][j][k];
+                        }
+                        exp += z[i][j][k] * (1 ? j==k : 0) * sigma;
+                        constraints.add(IloRange(env, 0, exp, mu, name.c_str()));
+                        exp.clear();
+                        exp.end();
+                    }
                 }
             }
         }
-        // midhaul delay computation
-        // TODO
-        std::string name = "Delay(" + std::to_string(i) + ")";
-        constraints.add(IloRange(env, -IloInfinity, exp, data.getDemand(i).getMaxLatency(), name.c_str()));
-        exp.clear();
-        exp.end();
     }
+
 }
 
 // void Model::setLinearityConstraints1(){

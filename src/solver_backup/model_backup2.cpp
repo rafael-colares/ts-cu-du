@@ -1,0 +1,448 @@
+#include "model.hpp"
+
+/****************************************************************************************/
+/*										Constructors									*/
+/****************************************************************************************/
+
+Model::Model(const IloEnv& env_, const Data& data_) : 
+                env(env_), model(env), cplex(model), data(data_), 
+                obj(env), constraints(env)
+{
+
+    std::cout << "=> Building model ... " << std::endl;
+    
+    setVariables();
+    setObjective();  
+    setConstraints();  
+    setCplexParameters();
+
+    std::cout << "=> Model was correctly built ! " << std::endl;                 
+}
+
+/****************************************************************************************/
+/*										Variables										*/
+/****************************************************************************************/
+
+/* Set up variables */
+void Model::setVariables(){
+    const int NB_NODES   = lemon::countNodes(data.getGraph());
+    const int NB_DEMANDS = data.getNbDemands();
+
+    std::cout << "\t Setting up variables... " << std::endl;
+
+    setLinearizationVariables(NB_DEMANDS, NB_NODES);
+
+    std::cout << "\t All variables are set up! " << std::endl;
+}
+
+/* Set up the linearization variables z. */
+void Model::setLinearizationVariables(const int NB_DEMANDS, const int NB_NODES){
+    /* Total placement variables. z[i][j][k] = 1 if demand i has a DU in node j and CU in node k. */
+    std::cout << "\t >> Setting up Linearization variables. " << std::endl;
+    z.resize(NB_DEMANDS);
+    for (int i = 0; i < NB_DEMANDS; i++){
+        z[i].resize(NB_NODES);
+        int sourceId = data.getDemand(i).getSource();
+        Graph::Node sourceNode = data.getGraph().nodeFromId(sourceId);
+        for (NodeIt duNode(data.getGraph()); duNode != lemon::INVALID; ++duNode){
+            int j = data.getNodeId(duNode);
+            z[i][j].resize(NB_NODES);
+            for (NodeIt cuNode(data.getGraph()); cuNode != lemon::INVALID; ++cuNode){
+                int k = data.getNodeId(cuNode);
+                std::string name = "z(" + std::to_string(i) + "," + std::to_string(j) + "," + std::to_string(k) + ")";
+                IloNumVar::Type varType = data.getInput().isRelaxation() ? ILOFLOAT : ILOBOOL;
+                double upperBound = (data.areNeighbors(sourceNode, duNode) && data.areNeighbors(duNode, cuNode)) ? 1.0 : 0.0;
+
+                z[i][j][k] = IloNumVar(env, 0.0, upperBound, varType, name.c_str());
+                model.add(z[i][j][k]);
+            }
+        }
+    }
+}
+
+void Model::setConcurrentVariables(const int NB_DEMANDS, const int NB_NODES)
+{
+    /* Concurrent placement variables. [i1][i2][j][k] = 1 if demand i1 and demand i2 have both a DU in node j and CU in node k. */
+    
+    std::cout << "\t >> Setting up concurrent placement variables. " << std::endl;
+    concurrent.resize(NB_DEMANDS);
+    for (int i1 = 0; i1 < NB_DEMANDS; i1++){
+        concurrent[i1].resize(NB_NODES);
+        Graph::Node ruNode1 = data.getGraph().nodeFromId(data.getDemand(i1).getSource());
+        for (int i2 = 0; i2 < NB_DEMANDS; i2++){
+            concurrent[i1][i2].resize(NB_NODES);
+            Graph::Node ruNode2 = data.getGraph().nodeFromId(data.getDemand(i2).getSource());
+            for (NodeIt duNode(data.getGraph()); duNode != lemon::INVALID; ++duNode){
+                int j = data.getNodeId(duNode);
+                concurrent[i1][i2][j].resize(NB_NODES);
+                for (NodeIt cuNode(data.getGraph()); cuNode != lemon::INVALID; ++cuNode){
+                    int k = data.getNodeId(cuNode);
+                    std::string name = "conc(" + std::to_string(i1) + "," + std::to_string(i2) + "," + std::to_string(j) + "," + std::to_string(k) + ")";
+                    IloNumVar::Type varType = data.getInput().isRelaxation() ? ILOFLOAT : ILOBOOL;
+                    double upperBound = (data.areNeighbors(ruNode1, duNode) && data.areNeighbors(ruNode2, duNode) && data.areNeighbors(duNode, cuNode)) ? 1.0 : 0.0;
+
+                    concurrent[i1][i2][j][k] = IloNumVar(env, 0.0, upperBound, varType, name.c_str());
+                    model.add(concurrent[i1][i2][j][k]);
+                }
+            }
+        }
+    }
+}
+
+/****************************************************************************************/
+/*									Objective Function									*/
+/****************************************************************************************/
+
+/* Set up objective function. */
+void Model::setObjective(){
+
+    std::cout << "\t Setting up objective function... " << std::endl;
+	IloExpr exp(env);
+    /* Placement costs */
+    for (int i = 0; i < data.getNbDemands(); i++){
+        int sourceId = data.getDemand(i).getSource();
+        Graph::Node sourceNode = data.getGraph().nodeFromId(sourceId);
+        for(NodeIt duNode(data.getGraph()); duNode != lemon::INVALID; ++duNode) {
+            if (data.areNeighbors(sourceNode, duNode)){
+                int j = data.getNodeId(duNode);
+                double costDU = data.getDistributedUnitPlacementCost(data.getNode(j));
+                for(NodeIt cuNode(data.getGraph()); cuNode != lemon::INVALID; ++cuNode) {
+                    if (data.areNeighbors(duNode, cuNode)){
+                        int k = data.getNodeId(cuNode);
+                        double costCU = data.getCentralUnitPlacementCost(data.getNode(k));
+                        exp += ( (costCU + costDU)*z[i][j][k] ); 
+                    }
+                }
+            }
+        }
+    }
+
+    // /* Distributed unit placement costs */
+    // for (int i = 0; i < data.getNbDemands(); i++){
+    //     for(NodeIt n(data.getGraph()); n != lemon::INVALID; ++n) {
+    //         int j = data.getNodeId(n);
+    //         double cost = data.getDistributedUnitPlacementCost(data.getNode(j));
+    //         exp += ( cost*x_du[i][j] ); 
+    //     }
+    // }
+
+	obj.setExpr(exp);
+	obj.setSense(IloObjective::Minimize);
+    model.add(obj);
+
+    std::cout << "\t Objective function has been set up! " << std::endl;
+
+	exp.clear();
+    exp.end();
+}
+
+/****************************************************************************************/
+/*										Constraints										*/
+/****************************************************************************************/
+
+/* Set up constraints. */
+void Model::setConstraints(){
+
+    std::cout << "\t Setting up constraints... " << std::endl;
+
+    // setCentralUnitAssignmentConstraints();
+    // setDistributedUnitAssignmentConstraints();
+    // setPlacementDUConstraints();
+    // setPlacementCUConstraints();
+    // setLinearityConstraints1();
+    // setLinearityConstraints2();
+    // setLinearityConstraints3();
+    setPlacementConstraints();
+    setLinkCapacityConstraints();
+
+    model.add(constraints);
+    std::cout << "\t The constraint matrix has been set up! " << std::endl;
+
+}
+
+/* Set up the central unit assignment constraints: for each demand, exactly one CU must be assigned. */
+// void Model::setCentralUnitAssignmentConstraints(){
+//     std::cout << "\t > Setting up central unit assignment constraints " << std::endl;
+//     for (int i = 0; i < data.getNbDemands(); i++){
+//         IloExpr exp(env);
+//         for (NodeIt n(data.getGraph()); n != lemon::INVALID; ++n){
+//             int j = data.getNodeId(n);
+//             double coeff = 1.0;
+//             exp += (coeff * x_cu[i][j]);
+//         }
+//         std::string name = "CU_Assignment(" + std::to_string(i) + ")";
+//         constraints.add(IloRange(env, 1, exp, 1, name.c_str()));
+//         exp.clear();
+//         exp.end();
+//     }
+// }
+
+/* Set up the distributed unit assignment constraints: for each demand, exactly one DU must be assigned. */
+// void Model::setDistributedUnitAssignmentConstraints(){
+//     std::cout << "\t > Setting up distributed unit assignment constraints " << std::endl;
+//     for (int i = 0; i < data.getNbDemands(); i++){
+//         IloExpr exp(env);
+//         for (NodeIt n(data.getGraph()); n != lemon::INVALID; ++n){
+//             int j = data.getNodeId(n);
+//             double coeff = 1.0;
+//             exp += (coeff * x_du[i][j]);
+//         }
+//         std::string name = "DU_Assignment(" + std::to_string(i) + ")";
+//         constraints.add(IloRange(env, 1, exp, 1, name.c_str()));
+//         exp.clear();
+//         exp.end();
+//     }
+// }
+
+// void Model::setPlacementDUConstraints(){
+//     std::cout << "\t > Setting up central unit assignment constraints " << std::endl;
+
+//     int numOfNodes = lemon::countNodes(data.getGraph());
+
+//     int neighborhood[numOfNodes][numOfNodes]={0};
+
+//     for (ArcIt l(data.getGraph()); l != lemon::INVALID; ++l){
+//         int idx_i = data.getGraph().id(data.getGraph().source(l));
+//         int idx_j = data.getGraph().id(data.getGraph().target(l));
+
+//         neighborhood[idx_i][idx_j] = 1;
+//     }
+
+//     for (int i = 0; i < numOfNodes; i++){
+//         neighborhood[i][i] = 1;
+//     }
+
+//     for (int idx = 0; idx < data.getNbDemands(); idx++){
+//         IloExpr exp(env);
+//         int i = data.getDemand(idx).getSource();
+//         for (NodeIt n(data.getGraph()); n != lemon::INVALID; ++n){
+//             int j = data.getNodeId(n);
+//             exp += (neighborhood[i][j] * x_du[i][j]);
+//         }
+//         std::string name = "Placement(" + std::to_string(idx) + ")";
+//         constraints.add(IloRange(env, 1, exp, 1, name.c_str()));
+//         exp.clear();
+//         exp.end();
+//     }
+// }
+
+void Model::setPlacementConstraints(){
+    std::cout << "\t > Setting up central unit assignment constraints " << std::endl;
+
+    for (int i = 0; i < data.getNbDemands(); i++){
+        int ruNodeId = data.getDemand(i).getSource();
+        Graph::Node ruNode = data.getGraph().nodeFromId(ruNodeId);
+        IloExpr exp(env);
+        for(NodeIt duNode(data.getGraph()); duNode != lemon::INVALID; ++duNode) {
+            if (data.areNeighbors(ruNode, duNode)){
+                int j = data.getNodeId(duNode);
+                for(NodeIt cuNode(data.getGraph()); cuNode != lemon::INVALID; ++cuNode) {
+                    if (data.areNeighbors(duNode, cuNode)){
+                        int k = data.getNodeId(cuNode);
+                        exp += z[i][j][k]; 
+                    }
+                }
+            }
+        }
+        std::string name = "Placement(" + std::to_string(i) + ")";
+        constraints.add(IloRange(env, 1, exp, 1, name.c_str()));
+        exp.clear();
+        exp.end();
+    }
+}
+
+/* Set up the link capacity constraints: for each network link, the aggregated throughput must be smaller than its capacity */
+void Model::setLinkCapacityConstraints(){
+    std::cout << "\t > Setting up Link Capacity Constraints " << std::endl;
+
+    for (ArcIt l(data.getGraph()); l != lemon::INVALID; ++l){
+        IloExpr exp(env);
+
+        int j = data.getGraph().id(data.getGraph().source(l));
+        int k = data.getGraph().id(data.getGraph().target(l));
+        double mu = data.getLink(data.getGraph().id(l)).getCapacity();
+        cout << j << " " << k << " " << mu;
+        for (int i = 0; i < data.getNbDemands(); i++){
+            double lambda = data.getDemand(i).getThroughput();
+            cout << " " << lambda << " ";
+            exp += lambda * z[i][j][k];
+        }
+        cout << endl;
+
+        std::string name = "Capacity of link(" + std::to_string(data.getGraph().id(l)) + ")";
+        constraints.add(IloRange(env, 0, exp, mu, name.c_str()));
+        exp.clear();
+        exp.end();
+    }
+}
+
+// void Model::setLinearityConstraints1(){
+//     for (int idx = 0; idx < data.getNbDemands(); idx++){
+//         int i = data.getDemand(idx).getSource();
+//         for(NodeIt n(data.getGraph()); n != lemon::INVALID; ++n) {
+//             int j = data.getNodeId(n);
+//             for(NodeIt nn(data.getGraph()); nn != lemon::INVALID; ++nn) {
+//                 IloExpr exp(env);
+//                 int k = data.getNodeId(nn);
+//                 exp += 1.0 * z[i][j][k] - 1.0 * x_du[i][j];
+
+//                 std::string name = "Linearization 1 of (i,j,k)=(" + std::to_string(i) + "," + std::to_string(j) + "," + std::to_string(k) + ")";
+//                 constraints.add(IloRange(env, -IloInfinity, exp, 0, name.c_str()));
+//                 exp.clear();
+//                 exp.end();
+//             }
+//         }
+//     }
+// }
+
+// void Model::setLinearityConstraints2(){
+//     for (int idx = 0; idx < data.getNbDemands(); idx++){
+//         int i = data.getDemand(idx).getSource();
+//         for(NodeIt n(data.getGraph()); n != lemon::INVALID; ++n) {
+//             int j = data.getNodeId(n);
+//             for(NodeIt nn(data.getGraph()); nn != lemon::INVALID; ++nn) {
+//                 IloExpr exp(env);
+//                 int k = data.getNodeId(nn);
+//                 exp += 1.0 * z[i][j][k] - 1.0 * x_cu[i][k];
+
+//                 std::string name = "Linearization 2 of (i,j,k)=(" + std::to_string(i) + "," + std::to_string(j) + "," + std::to_string(k) + ")";
+//                 constraints.add(IloRange(env, -IloInfinity, exp, 0, name.c_str()));
+//                 exp.clear();
+//                 exp.end();
+//             }
+//         }
+//     }
+// }
+
+// void Model::setLinearityConstraints3(){
+//     for (int idx = 0; idx < data.getNbDemands(); idx++){
+//         int i = data.getDemand(idx).getSource();
+//         for(NodeIt n(data.getGraph()); n != lemon::INVALID; ++n) {
+//             int j = data.getNodeId(n);
+//             for(NodeIt nn(data.getGraph()); nn != lemon::INVALID; ++nn) {
+//                 IloExpr exp(env);
+//                 int k = data.getNodeId(nn);
+//                 exp += 1.0 * x_du[i][j] + 1.0 * x_cu[i][k] - 1.0 * z[i][j][k] - 1.0;
+
+//                 std::string name = "Linearization 2 of (i,j,k)=(" + std::to_string(i) + "," + std::to_string(j) + "," + std::to_string(k) + ")";
+//                 constraints.add(IloRange(env, -IloInfinity, exp, 0, name.c_str()));
+//                 exp.clear();
+//                 exp.end();
+//             }
+//         }
+//     }
+// }
+
+
+void Model::run()
+{
+    cplex.exportModel("mip.lp");
+    time = cplex.getCplexTime();
+	cplex.solve();
+
+	/* Get final execution time */
+	time = cplex.getCplexTime() - time;
+}
+
+void Model::printResult(){
+    
+    const int NB_DEMANDS = data.getNbDemands();
+    std::cout << "=> Printing solution ..." << std::endl;
+    for (int ii = 0; ii < NB_DEMANDS; ii++) {
+        int i = data.getDemand(ii).getSource();
+        std::cout << std::endl << "----------------------------------------------------" << std::endl << std::endl;
+        std::cout << "Placement for RU i = " << i+1 << " is : ";
+        for (NodeIt n(data.getGraph()); n != lemon::INVALID; ++n){
+            for (NodeIt nn(data.getGraph()); nn != lemon::INVALID; ++nn){
+                int j = data.getNodeId(n);
+                int k = data.getNodeId(nn);
+                if (cplex.getValue(z[i][j][k]) > 1 - EPS){
+                    std::cout << "(" << j << "," << k << ")" << ", ";
+                }
+            }
+        }
+        // std::cout << std::endl << "and (DU,CU) installed at nodes : ";
+        // for (NodeIt n(data.getGraph()); n != lemon::INVALID; ++n){
+        //     int j = data.getNodeId(n);
+        //     if (cplex.getValue(x_du[i][j]) > 1 - EPS){
+        //         std::cout << j << ", ";
+        //     }
+        // }
+        // for (NodeIt n(data.getGraph()); n != lemon::INVALID; ++n){
+        //     int k = data.getNodeId(n);
+        //     if (cplex.getValue(x_cu[i][k]) > 1 - EPS){
+        //         std::cout << k << endl;
+        //     }
+        // }
+        std::cout << std::endl;
+    }
+    std::cout << std::endl << "----------------------------------------------------" << std::endl << std::endl;
+
+    std::cout << "Objective value: " << cplex.getValue(obj) << std::endl;
+    std::cout << "Nodes evaluated: " << cplex.getNnodes() << std::endl;
+    //std::cout << "User cuts added: " << callback->getNbUserCuts() << std::endl;
+    //std::cout << "Lazy constraints added: " << callback->getNbLazyConstraints() << std::endl;
+    //std::cout << "Time on cuts: " << callback->getTime() << std::endl;
+    std::cout << "Total time: " << time << std::endl << std::endl;
+    //testRelaxationAvail();
+}
+
+/** Set up the Cplex parameters. **/
+void Model::setCplexParameters(){
+
+    /** Time limit definition **/
+    cplex.setParam(IloCplex::Param::TimeLimit, data.getInput().getTimeLimit());    // Execution time limited
+	
+    // cplex.setParam(IloCplex::Param::Simplex::Tolerances::Feasibility, 1e-9);
+    // cplex.setParam(IloCplex::Param::Simplex::Tolerances::Optimality, 1e-9);
+    // cplex.setParam(IloCplex::Param::MIP::Tolerances::Integrality, 1e-12); 
+    // cplex.setParam(IloCplex::Param::MIP::Tolerances::AbsMIPGap, 1e-12); 
+    // // cplex.setParam(IloCplex::Param::MIP::Tolerances::Linearization, 1e-12); 
+    // // cplex.setParam(IloCplex::Param::MIP::Tolerances::LowerCutoff, 1e-6); 
+    // cplex.setParam(IloCplex::Param::MIP::Tolerances::MIPGap, 1e-12); 
+    // cplex.setParam(IloCplex::Param::MIP::Tolerances::ObjDifference, 1e-12);  
+    // cplex.setParam(IloCplex::Param::MIP::Tolerances::RelObjDifference, 1e-12);  
+    // // cplex.setParam(IloCplex::Param::MIP::Tolerances::UpperCutoff, 1e-6);    // Execution time limited
+    // //cplex.setParam(IloCplex::Param::Threads, 1); // Treads limited
+}
+
+void Model::output(){
+    std::string output_file = data.getInput().getOutputFile();
+    if (output_file.empty()){
+        return;
+    }
+
+	std::ofstream fileReport(output_file, std::ios_base::app); // File report
+    // If file_output can't be opened 
+    if(!fileReport)
+    {
+        std::cerr << "ERROR: Unable to access output file." << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    std::string demand_name = getInBetweenString(data.getInput().getDemandFile(), "/", ".");
+    std::string node_name = getInBetweenString(data.getInput().getNodeFile(), "/", ".");
+    std::string instance_name = node_name + "_" + demand_name;
+
+    fileReport << instance_name << ";"
+    		   << time << ";"
+    		   << cplex.getObjValue() << ";"
+    		   << cplex.getBestObjValue() << ";"
+    		   << cplex.getMIPRelativeGap()*100 << ";"
+    		   << cplex.getNnodes() << ";"
+    		   << cplex.getNnodesLeft()*0.001 << ";" 
+               //<< callback->getNbLazyConstraints() << ";" 
+    		   //<< callback->getNbUserCuts() << ";" 
+    		   //<< callback->getTime() << ";" 
+               << std::endl;
+    		   
+    // Finalization ***
+    fileReport.close();
+
+}
+
+/****************************************************************************************/
+/*										Destructors 									*/
+/****************************************************************************************/
+Model::~Model(){
+}
