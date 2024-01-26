@@ -389,31 +389,33 @@ void Model::setDelayConstraints()
     // }
 
     
-    for (int i = 0; i < data.getNbDemands(); i++){
-        int ruNodeId = data.getDemand(i).getSource();
-        Graph::Node ruNode = data.getGraph().nodeFromId(ruNodeId);
-        for(NodeIt duNode(data.getGraph()); duNode != lemon::INVALID; ++duNode) {
-            if (data.areNeighbors(ruNode, duNode)){
-                int j = data.getNodeId(duNode);
-                for(NodeIt cuNode(data.getGraph()); cuNode != lemon::INVALID; ++cuNode) {
-                    if (data.areNeighbors(duNode, cuNode)){
-                        int k = data.getNodeId(cuNode);
-                        double mu = ;       //TODO: find mu based on pair (j,k)
-                        double sigma = ;    //TODO: find sigma (check definition on overleaf)
-                        IloExpr exp(env);
-                        for (int ii = 0; ii < data.getNbDemands(); ii++){
-                            double lambda = data.getDemand(ii).getThroughput();
-                            exp += lambda * z[ii][j][k];
-                        }
-                        exp += z[i][j][k] * (1 ? j==k : 0) * sigma;
-                        constraints.add(IloRange(env, 0, exp, mu, name.c_str()));
-                        exp.clear();
-                        exp.end();
-                    }
-                }
-            }
-        }
-    }
+    // for (int i = 0; i < data.getNbDemands(); i++){
+    //     int ruNodeId = data.getDemand(i).getSource();
+    //     Graph::Node ruNode = data.getGraph().nodeFromId(ruNodeId);
+    //     for(NodeIt duNode(data.getGraph()); duNode != lemon::INVALID; ++duNode) {
+    //         if (data.areNeighbors(ruNode, duNode)){
+    //             int j = data.getNodeId(duNode);
+    //             for(NodeIt cuNode(data.getGraph()); cuNode != lemon::INVALID; ++cuNode) {
+    //                 if (data.areNeighbors(duNode, cuNode)){
+    //                     int k = data.getNodeId(cuNode);
+    //                     double mu = ;       //TODO: find mu based on pair (j,k)
+    //                     double sigma = ;    //TODO: find sigma (check definition on overleaf)
+    //                     IloExpr exp(env);
+    //                     for (int ii = 0; ii < data.getNbDemands(); ii++){
+    //                         double lambda = data.getDemand(ii).getThroughput();
+    //                         exp += lambda * z[ii][j][k];
+    //                     }
+    //                     exp += z[i][j][k] * (1 ? j==k : 0) * sigma;
+    //                     constraints.add(IloRange(env, 0, exp, mu, name.c_str()));
+    //                     exp.clear();
+    //                     exp.end();
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
+
+    //TODO: implement new delay
 
 }
 
