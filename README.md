@@ -69,7 +69,7 @@ It requires the CPLEX and LEMON librairies. CPLEX is used as a MIP solver and LE
 
        ./hello_lemon
    
-
+6. LEMON documentation can be found here: http://lemon.cs.elte.hu/pub/tutorial/index.html
 ## Compilation
 
 Compilation is done through a makefile. Please update the CPLEX paths according to your CPLEX installation locations.
